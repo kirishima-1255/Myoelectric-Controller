@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
+  </head>
+  <body>
+    <div class="container-md p-5">
+      <h1>Temperature Monitor</h1>
+      <div class="text-center p-4">
+        <h2 id="Temperature">initializing ...</h2>
+      </div>
+      <canvas id="myChart"></canvas>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.3.2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@1.27.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-streaming@2.0.0"></script>
+
+    <script>
+      var ctx = document.getElementById("myChart").getContext("2d");
+      var chart = new Chart(ctx, {
+        type: "line",
+        data: {
+          datasets: [
+            {
+              data: [],
+            },
+          ],
+        },
+        options: {
+          plugins: {
+            streaming: {
+              duration: 20000,
+            },
+          },
+          scales: {
+            x: {
+              type: "realtime",
+              realtime: {
+                duration: 20000,
+              },
+            },
+          },
+        },
+      });
+
+      /*  以下でwebscoketで取得したデータの処理を行っている       */
+      var connection = new WebSocket("ws://localhost:8080/ws/display");
+      connection.onmessage = function (e) {
+        /* 温度を文字で表示 */
+        document.getElementById("Temperature").innerHTML =
+          JSON.parse(e.data)["data"] + " degree";
+
+        /* 温度データをグラフに追加 */
+        chart.data.datasets[0].data.push({
+          x: Date.now(),
+          y: JSON.parse(e.data)["data"],
+        });
+        chart.update();
+      };
+    </script>
+  </body>
+</html>
